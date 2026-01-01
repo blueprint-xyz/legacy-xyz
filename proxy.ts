@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+    isPublicPath,
+    verifyRequestAuth,
+    redirectToLogin,
+} from "@/core/auth/middleware";
 
 // Root domain configuration
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "blueprint-xyz.com";
@@ -43,16 +48,22 @@ function getSubdomain(req: NextRequest): string | null {
   return null;
 }
 
-export function proxy(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const subdomain = getSubdomain(req);
   const pathname = req.nextUrl.pathname;
 
   // If we're on the admin subdomain, rewrite to /admin routes
   if (subdomain === "admin") {
-    // Rewrite the URL to the admin section
-    // admin.blueprint-xyz.com/ -> /admin
-    // admin.blueprint-xyz.com/dashboard -> /admin/dashboard
     const adminPath = pathname === "/" ? "/admin" : `/admin${pathname}`;
+
+    // Check auth for protected routes
+    if (!isPublicPath(pathname)) {
+      const payload = await verifyRequestAuth(req);
+
+      if (!payload) {
+        return redirectToLogin(req, true);
+      }
+    }
 
     return NextResponse.rewrite(new URL(adminPath, req.url));
   }
