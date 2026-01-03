@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
         // Retrieve the prompt we sent in the custom headers earlier
         // (In production, you might fetch this from a DB using the call ID)
-        const aiPrompt = event.payload.custom_headers?.find(h => h.name === "X-AI-Prompt")?.value
+        const aiPrompt = event.payload.custom_headers?.find((h: Record<string, string>) => h.name === "X-AI-Prompt")?.value
             || "You are a helpful assistant.";
 
         // 2. Command Telnyx to start the AI Agent
