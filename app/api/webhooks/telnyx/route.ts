@@ -34,6 +34,8 @@ export async function POST(req: Request) {
                 },
                 // Request the summary/transcript to be generated after the call
                 inference: {
+                    // "summary" tells Telnyx to run the LLM summarizer after the call
+                    features: ["summary", "transcription"],
                     summary_length: "short"
                 },
                 transcription: { language: "en" }
@@ -47,17 +49,11 @@ export async function POST(req: Request) {
     // 2. [NEW] CAPTURE THE FULL SUMMARY/TRANSCRIPT
     // This event fires 10-20 seconds AFTER the call ends.
     if (event.event_type === 'call.conversation_insights.generated') {
-        const payload = event.payload;
-
-        console.log("\n💎 GEM DETECTED: Insights Generated!");
+        console.log("\n💎 INSIGHTS EVENT RECEIVED");
         console.log("-------------------------------------");
 
-        // Print the automated summary
-        console.log("📝 SUMMARY:", payload.summary);
-
-        // Print the full transcript (if available in payload)
-        // Note: Sometimes it's inside 'transcription' or 'prose' depending on API version
-        console.log("📜 FULL TRANSCRIPT JSON:", JSON.stringify(payload.transcription || payload.prose, null, 2));
+        // DUMP THE WHOLE PAYLOAD TO CONSOLE
+        console.log(JSON.stringify(event.payload, null, 2));
 
         console.log("-------------------------------------\n");
     }
