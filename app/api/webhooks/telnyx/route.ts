@@ -19,7 +19,22 @@ export async function POST(req: Request) {
         const callControlId = event.payload.call_control_id;
         const aiPrompt = event.payload.custom_headers?.find((h: Record<string, string>) => h.name === "X-AI-Prompt")?.value || "Helpful assistant";
 
-        // IMPORTANT: Enable "inference" (Insights) so we get the summary at the end
+        // 1. FORCE START RECORDING (This fixes your problem) 🔴
+        // We explicitly tell the API: "Start recording NOW"
+        await fetch(`https://api.telnyx.com/v2/calls/${callControlId}/actions/record_start`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.TELNYX_API_KEY}`,
+            },
+            body: JSON.stringify({
+                format: "mp3",
+                channels: "dual"
+            }),
+        });
+        console.log("🔴 Command Sent: Start Recording");
+
+        // 2. Start the AI Agent
         const aiResponse = await fetch(`https://api.telnyx.com/v2/calls/${callControlId}/actions/ai_assistant_start`, {
             method: 'POST',
             headers: {
@@ -34,7 +49,6 @@ export async function POST(req: Request) {
                     openai_api_key: process.env.OPENAI_API_KEY,
                     greeting: "Hello! I am your AI assistant. How can I help you today?",
                 },
-                // Request the summary/transcript to be generated after the call
                 inference: {
                     features: ["summary", "transcription"],
                     summary_length: "short"
