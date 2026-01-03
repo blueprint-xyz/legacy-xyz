@@ -12,7 +12,9 @@ export async function POST(req: Request) {
 
     console.log(`\n🔔 EVENT: ${event.event_type} | ID: ${event.payload.call_control_id?.slice(-4)}`);
 
-    // 1. START AI (Keep this exactly as it was)
+    // ---------------------------------------------------------
+    // EVENT 1: CALL ANSWERED -> START AI
+    // ---------------------------------------------------------
     if (event.event_type === 'call.answered') {
         const callControlId = event.payload.call_control_id;
         const aiPrompt = event.payload.custom_headers?.find((h: Record<string, string>) => h.name === "X-AI-Prompt")?.value || "Helpful assistant";
@@ -34,7 +36,6 @@ export async function POST(req: Request) {
                 },
                 // Request the summary/transcript to be generated after the call
                 inference: {
-                    // "summary" tells Telnyx to run the LLM summarizer after the call
                     features: ["summary", "transcription"],
                     summary_length: "short"
                 },
@@ -46,21 +47,42 @@ export async function POST(req: Request) {
         else console.error("❌ AI Start Failed", await aiResponse.text());
     }
 
-    // 2. [NEW] CAPTURE THE FULL SUMMARY/TRANSCRIPT
-    // This event fires 10-20 seconds AFTER the call ends.
+    // ---------------------------------------------------------
+    // EVENT 2: INSIGHTS GENERATED (Summary)
+    // ---------------------------------------------------------
     if (event.event_type === 'call.conversation_insights.generated') {
-        console.log("\n💎 INSIGHTS EVENT RECEIVED");
+        const summary = event.payload.results?.[0]?.result || "No summary available.";
+
+        console.log("\n💎 GEM DETECTED: Insights Generated!");
         console.log("-------------------------------------");
-
-        // DUMP THE WHOLE PAYLOAD TO CONSOLE
-        console.log(JSON.stringify(event.payload, null, 2));
-
+        console.log("📝 SUMMARY:", summary);
+        // Uncomment below to see raw data if needed
+        // console.log(JSON.stringify(event.payload, null, 2));
         console.log("-------------------------------------\n");
     }
 
-    // (Optional) You can keep the real-time logger for debugging if you fix the portal settings
+    // ---------------------------------------------------------
+    // EVENT 3: REAL-TIME TRANSCRIPTION LOGS
+    // ---------------------------------------------------------
     if (event.event_type === 'ai_assistant.transcription') {
         console.log(`🗣️ [${event.payload.role}]: ${event.payload.text}`);
+    }
+
+    // ---------------------------------------------------------
+    // EVENT 4: RECORDING SAVED (Audio File)
+    // ---------------------------------------------------------
+    if (event.event_type === 'call.recording.saved') {
+        const recordingData = event.payload;
+
+        console.log(JSON.stringify(recordingData));
+        console.log("\n🎙️ RECORDING READY!");
+        console.log("-------------------------------------");
+        // This is the link to the MP3 file
+        console.log("🔗 Audio URL:", recordingData.recording_urls.mp3);
+        console.log("⏱️ Duration:", recordingData.duration_seconds, "seconds");
+        console.log("-------------------------------------\n");
+
+        // TODO: Save 'recordingData.recording_urls.mp3' to your database
     }
 
     return NextResponse.json({ received: true });

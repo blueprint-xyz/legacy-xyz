@@ -16,6 +16,7 @@ export async function POST(req: Request) {
             // This URL handles the call logic (see next file)
             // webhook_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks/telnyx`,
             webhook_url: `https://www.legacy-xyz.com/api/webhooks/telnyx`,
+            record_channels: "dual",
             // We pass the AI prompt as custom metadata to use later
             custom_headers: [
                 { name: "X-AI-Prompt", value: prompt }
