@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+const callTranscripts: Record<string, string[]> = {};
+
 export async function POST(req: Request) {
     const body = await req.json();
     const event = body.data;
@@ -46,10 +48,36 @@ export async function POST(req: Request) {
         }
     }
 
-    // 3. Listen for when the call ends to get the summary
-    if (event.event_type === 'call.conversation.ended') {
-        console.log("Transcript:", event.payload.transcript);
-        // TODO: Save transcript/summary to your database here
+    // 2. [NEW] CAPTURE TRANSCRIPT CHUNKS
+    if (event.event_type === 'ai_assistant.transcription') {
+        const callControlId = event.payload.call_control_id;
+        const text = event.payload.text;
+        const role = event.payload.role; // "assistant" or "user"
+
+        // Only save meaningful text
+        if (text && callTranscripts[callControlId]) {
+            callTranscripts[callControlId].push(`${role}: ${text}`);
+            console.log(`📝 [${role}]: ${text}`);
+        }
+    }
+
+    // 3. CALL ENDED: Generate Summary
+    if (event.event_type === 'call.hangup' || event.event_type === 'call.conversation.ended') {
+        const callControlId = event.payload.call_control_id;
+
+        // Retrieve the full transcript we collected
+        const fullConversation = callTranscripts[callControlId]?.join('\n') || "No transcript recorded.";
+
+        console.log("--------------------------------");
+        console.log("📞 FINAL TRANSCRIPT:");
+        console.log(fullConversation);
+        console.log("--------------------------------");
+
+        // NOW you can generate the summary using OpenAI or Telnyx Inference
+        // await generateSummary(fullConversation);
+
+        // Clean up memory
+        delete callTranscripts[callControlId];
     }
 
     return NextResponse.json({ received: true });
