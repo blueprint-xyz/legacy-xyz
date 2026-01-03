@@ -23,6 +23,7 @@ export async function POST(req: Request) {
             },
             body: JSON.stringify({
                 assistant: {
+                    id: "assistant-608374c2-d91a-40c2-a9fe-d00be2921a42",
                     system_prompt: aiPrompt,
                     voice: "Telnyx.KokoroTTS.af_bella",
                     // IMPORTANT: OpenAI keys are often required unless you use Telnyx hosted models
