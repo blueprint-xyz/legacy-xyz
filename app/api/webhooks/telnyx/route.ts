@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     // 1. START AI (Keep this exactly as it was)
     if (event.event_type === 'call.answered') {
         const callControlId = event.payload.call_control_id;
-        const aiPrompt = event.payload.custom_headers?.find((h: any) => h.name === "X-AI-Prompt")?.value || "Helpful assistant";
+        const aiPrompt = event.payload.custom_headers?.find((h: Record<string, string>) => h.name === "X-AI-Prompt")?.value || "Helpful assistant";
 
         // IMPORTANT: Enable "inference" (Insights) so we get the summary at the end
         const aiResponse = await fetch(`https://api.telnyx.com/v2/calls/${callControlId}/actions/ai_assistant_start`, {
