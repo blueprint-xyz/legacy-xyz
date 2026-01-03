@@ -1,22 +1,28 @@
 import { NextResponse } from 'next/server';
 
-const callTranscripts: Record<string, string[]> = {};
+// ⚠️ GLOBAL VARIABLE: In production (Vercel/AWS), this empties on every request.
+// But locally on your computer, this often stays alive long enough to debug a single call.
+const debugTranscripts: Record<string, string[]> = {};
 
 export async function POST(req: Request) {
     const body = await req.json();
     const event = body.data;
 
-    // 1. Listen for when the call is answered
+    // 🔍 1. LOG EVERY EVENT TYPE (So you know the webhook is hitting you)
+    console.log(`\n🔔 EVENT: ${event.event_type} | Call ID: ${event.payload.call_control_id?.slice(-4)}`);
+
+    // ---------------------------------------------------------
+    // EVENT A: CALL ANSWERED -> START AI
+    // ---------------------------------------------------------
     if (event.event_type === 'call.answered') {
-        const callControlId = event.payload.call_control_id;
+        const callControlId: string = event.payload.call_control_id;
+        const aiPrompt = event.payload.custom_headers?.find((h: Record<string, string>) => h.name === "X-AI-Prompt")?.value || "Helpful assistant";
 
-        console.log('callControlId', callControlId);
-        // Retrieve the prompt we sent in the custom headers earlier
-        // (In production, you might fetch this from a DB using the call ID)
-        const aiPrompt = event.payload.custom_headers?.find((h: Record<string, string>) => h.name === "X-AI-Prompt")?.value
-            || "You are a helpful assistant.";
+        // Reset transcript storage for this new call
+        debugTranscripts[callControlId] = [];
 
-        // 2. Command Telnyx to start the AI Agent
+        console.log(`🚀 STARTING AI... (Prompt: "${aiPrompt.substring(0, 20)}...")`);
+
         const aiResponse = await fetch(`https://api.telnyx.com/v2/calls/${callControlId}/actions/ai_assistant_start`, {
             method: 'POST',
             headers: {
@@ -25,59 +31,60 @@ export async function POST(req: Request) {
             },
             body: JSON.stringify({
                 assistant: {
-                    id: "assistant-608374c2-d91a-40c2-a9fe-d00be2921a42",
+                    id: "assistant-608374c2-d91a-40c2-a9fe-d00be2921a42", // Your ID
                     system_prompt: aiPrompt,
                     voice: "Telnyx.KokoroTTS.af_bella",
-                    // IMPORTANT: OpenAI keys are often required unless you use Telnyx hosted models
                     openai_api_key: process.env.OPENAI_API_KEY,
-                    // FORCE the AI to speak first
                     greeting: "Hello! I am your AI assistant. How can I help you today?",
                 },
-                transcription: {
-                    language: "en"
-                }
+                transcription: { language: "en" }
             }),
         });
 
         if (!aiResponse.ok) {
-            const errorBody = await aiResponse.json();
-            console.error("CRITICAL: AI Failed to Start!", JSON.stringify(errorBody, null, 2));
+            console.error("❌ START FAILED:", await aiResponse.text());
         } else {
-            const successBody = await aiResponse.json();
-            console.log("SUCCESS: AI Started. Telnyx Response:", JSON.stringify(successBody, null, 2));
+            console.log("✅ AI STARTED.");
         }
     }
 
-    // 2. [NEW] CAPTURE TRANSCRIPT CHUNKS
+    // ---------------------------------------------------------
+    // EVENT B: TRANSCRIPTION (The most important part for you!)
+    // ---------------------------------------------------------
     if (event.event_type === 'ai_assistant.transcription') {
-        const callControlId = event.payload.call_control_id;
-        const text = event.payload.text;
-        const role = event.payload.role; // "assistant" or "user"
+        const { call_control_id, text, role } = event.payload;
 
-        // Only save meaningful text
-        if (text && callTranscripts[callControlId]) {
-            callTranscripts[callControlId].push(`${role}: ${text}`);
-            console.log(`📝 [${role}]: ${text}`);
+        // 1. Log immediately to console (This proves it works!)
+        console.log(`🗣️  [${role.toUpperCase()}]: "${text}"`);
+
+        // 2. Try to save it to memory
+        if (debugTranscripts[call_control_id]) {
+            debugTranscripts[call_control_id].push(`${role}: ${text}`);
         }
     }
 
-    // 3. CALL ENDED: Generate Summary
+    // ---------------------------------------------------------
+    // EVENT C: CALL ENDED -> DUMP EVERYTHING
+    // ---------------------------------------------------------
     if (event.event_type === 'call.hangup' || event.event_type === 'call.conversation.ended') {
         const callControlId = event.payload.call_control_id;
 
-        // Retrieve the full transcript we collected
-        const fullConversation = callTranscripts[callControlId]?.join('\n') || "No transcript recorded.";
-
-        console.log("--------------------------------");
-        console.log("📞 FINAL TRANSCRIPT:");
-        console.log(fullConversation);
+        console.log("\n🛑 CALL ENDED. DUMPING MEMORY:");
         console.log("--------------------------------");
 
-        // NOW you can generate the summary using OpenAI or Telnyx Inference
-        // await generateSummary(fullConversation);
+        const fullLog = debugTranscripts[callControlId]?.join('\n');
 
-        // Clean up memory
-        delete callTranscripts[callControlId];
+        if (fullLog) {
+            console.log(fullLog);
+        } else {
+            console.log("⚠️ Full transcript memory was empty (Expected if server restarted).");
+            console.log("⚠️ CHECK THE '🗣️' LOGS ABOVE - If you saw those, it worked!");
+        }
+
+        console.log("--------------------------------\n");
+
+        // Cleanup
+        delete debugTranscripts[callControlId];
     }
 
     return NextResponse.json({ received: true });
