@@ -12,10 +12,10 @@ export async function POST(req: Request) {
         body: JSON.stringify({
             to: phone,
             from: "+972524835373",
-            connection_id: "2864229876829783685", // Found in Telnyx Portal -> Call Control
+            connection_id: "2864772420361783121",
             // This URL handles the call logic (see next file)
             // webhook_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks/telnyx`,
-            webhook_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks/telnyx`,
+            webhook_url: `https://www.legacy-xyz.com/api/webhooks/telnyx`,
             // We pass the AI prompt as custom metadata to use later
             custom_headers: [
                 { name: "X-AI-Prompt", value: prompt }

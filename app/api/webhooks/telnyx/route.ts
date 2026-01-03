@@ -8,13 +8,14 @@ export async function POST(req: Request) {
     if (event.event_type === 'call.answered') {
         const callControlId = event.payload.call_control_id;
 
+        console.log('callControlId', callControlId);
         // Retrieve the prompt we sent in the custom headers earlier
         // (In production, you might fetch this from a DB using the call ID)
         const aiPrompt = event.payload.custom_headers?.find((h: Record<string, string>) => h.name === "X-AI-Prompt")?.value
             || "You are a helpful assistant.";
 
         // 2. Command Telnyx to start the AI Agent
-        await fetch(`https://api.telnyx.com/v2/calls/${callControlId}/actions/ai_assistant_start`, {
+        const aiResponse = await fetch(`https://api.telnyx.com/v2/calls/${callControlId}/actions/ai_assistant_start`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -23,8 +24,11 @@ export async function POST(req: Request) {
             body: JSON.stringify({
                 assistant: {
                     system_prompt: aiPrompt,
-                    voice: "Telnyx.KokoroTTS.af_bella", // Choose a voice
-                    openai_api_key: process.env.OPENAI_API_KEY // Optional: Use your own key or Telnyx's models
+                    voice: "Telnyx.KokoroTTS.af_bella",
+                    // IMPORTANT: OpenAI keys are often required unless you use Telnyx hosted models
+                    openai_api_key: process.env.OPENAI_API_KEY,
+                    // FORCE the AI to speak first
+                    greeting: "Hello! I am your AI assistant. How can I help you today?",
                 },
                 transcription: {
                     language: "en"
@@ -32,7 +36,13 @@ export async function POST(req: Request) {
             }),
         });
 
-        console.log(`AI Agent started for call ${callControlId}`);
+        if (!aiResponse.ok) {
+            const errorBody = await aiResponse.json();
+            console.error("CRITICAL: AI Failed to Start!", JSON.stringify(errorBody, null, 2));
+        } else {
+            const successBody = await aiResponse.json();
+            console.log("SUCCESS: AI Started. Telnyx Response:", JSON.stringify(successBody, null, 2));
+        }
     }
 
     // 3. Listen for when the call ends to get the summary
