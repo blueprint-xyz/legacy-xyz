@@ -1,18 +1,28 @@
 import mongoose, { Schema, Model } from "mongoose";
 
-interface UserDocument {
+export interface UserDocument {
+    _id: mongoose.Types.ObjectId;
     email: string;
-    password: string;
+    password?: string;
     phone?: string;
+    fullName?: string;
+    onboardingCompleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 const UserSchema: Schema = new Schema<UserDocument>(
     {
         email: { type: String, required: true, unique: true },
-        password: { type: String, required: true },
+        password: { type: String },
         phone: { type: String, unique: true, sparse: true },
+        fullName: { type: String },
+        onboardingCompleted: { type: Boolean, default: false },
     },
-    { collection: "users" }
+    {
+        collection: "users",
+        timestamps: true,
+    }
 );
 
 export const User: Model<UserDocument> =
