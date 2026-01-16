@@ -24,11 +24,19 @@ export async function POST(req: Request) {
             (h: Record<string, string>) => h.name === "X-AI-Prompt"
         )?.value || "You are a friendly AI assistant helping to capture life stories. Ask thoughtful questions about the user's life, memories, and experiences.";
 
-        // Build AI prompt with previous call context if available
+        // Build AI prompt and greeting based on whether this is a first-time or returning caller
         let aiPrompt = basePrompt;
+        let greeting: string;
+
         if (previousCall) {
-            aiPrompt = `${basePrompt}\n\nIMPORTANT CONTEXT FROM PREVIOUS CALL: ${previousCall}\n\nUse this context to continue the conversation naturally. You may ask follow-up questions about what was discussed before.`;
-            console.log("📚 Previous call context:", previousCall);
+            // Returning caller - has previous conversations
+            aiPrompt = `${basePrompt}\n\nIMPORTANT CONTEXT FROM PREVIOUS CALLS:\n${previousCall}\n\nUse this context to continue the conversation naturally. You may ask follow-up questions about what was discussed before.`;
+            greeting = "Welcome back! It's great to hear from you again. I've been looking forward to continuing your story from where we left off. What would you like to share today?";
+            console.log("📚 Previous call context loaded");
+        } else {
+            // First-time caller
+            greeting = "Hello! It's time for your Legacy interview. I'm here to listen and help you record another chapter of your life story. How are you feeling today?";
+            console.log("👋 First-time caller - no previous context");
         }
 
         try {
@@ -81,7 +89,7 @@ export async function POST(req: Request) {
                     instructions: aiPrompt,
                     voice: "Telnyx.KokoroTTS.af_bella",
                     openai_api_key: process.env.OPENAI_API_KEY,
-                    greeting: "Hello! I am your AI assistant. How can I help you today?",
+                    greeting,
                 },
                 inference: {
                     features: ["summary", "transcription"],
