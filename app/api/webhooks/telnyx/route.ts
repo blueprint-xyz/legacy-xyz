@@ -16,28 +16,14 @@ export async function POST(req: Request) {
         const callControlId = event.payload.call_control_id;
         const toPhone = event.payload.to;
 
-        // Extract custom headers
-        const previousCall = event.payload.custom_headers?.find(
-            (h: Record<string, string>) => h.name === "X-Previous-Call"
-        )?.value;
+        // Extract base prompt from custom headers
         const basePrompt = event.payload.custom_headers?.find(
             (h: Record<string, string>) => h.name === "X-AI-Prompt"
         )?.value || "You are a friendly AI assistant helping to capture life stories. Ask thoughtful questions about the user's life, memories, and experiences.";
 
-        // Build AI prompt and greeting based on whether this is a first-time or returning caller
         let aiPrompt = basePrompt;
         let greeting: string;
-
-        if (previousCall) {
-            // Returning caller - has previous conversations
-            aiPrompt = `${basePrompt}\n\nIMPORTANT CONTEXT FROM PREVIOUS CALLS:\n${previousCall}\n\nUse this context to continue the conversation naturally. You may ask follow-up questions about what was discussed before.`;
-            greeting = "Welcome back! It's great to hear from you again. I've been looking forward to continuing your story from where we left off. What would you like to share today?";
-            console.log("📚 Previous call context loaded");
-        } else {
-            // First-time caller
-            greeting = "Hello! It's time for your Legacy interview. I'm here to listen and help you record another chapter of your life story. How are you feeling today?";
-            console.log("👋 First-time caller - no previous context");
-        }
+        let previousCallsContext = "";
 
         try {
             await connect();
@@ -46,7 +32,30 @@ export async function POST(req: Request) {
             const user = await User.findOne({ phone: toPhone });
 
             if (user) {
-                // Create call record
+                // Fetch previous completed calls with summaries
+                const previousCalls = await CallRecord.find({
+                    userId: user._id,
+                    status: "completed",
+                    summary: { $exists: true, $ne: null }
+                })
+                .sort({ startedAt: -1 })
+                .limit(5)
+                .select({ summary: 1, startedAt: 1 });
+
+                if (previousCalls.length > 0) {
+                    previousCallsContext = previousCalls
+                        .map((call, index) => {
+                            const date = call.startedAt
+                                ? new Date(call.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                                : 'Unknown date';
+                            return `Call ${index + 1} (${date}): ${call.summary}`;
+                        })
+                        .join('\n\n');
+
+                    console.log(`📚 Found ${previousCalls.length} previous calls for context`);
+                }
+
+                // Create call record for this new call
                 await CallRecord.create({
                     userId: user._id,
                     callControlId,
@@ -59,7 +68,16 @@ export async function POST(req: Request) {
                 console.log("⚠️ No user found for phone:", toPhone);
             }
         } catch (error) {
-            console.error("❌ Failed to create call record:", error);
+            console.error("❌ Failed to process call.answered:", error);
+        }
+
+        // Build AI prompt and greeting based on whether this is a first-time or returning caller
+        if (previousCallsContext) {
+            aiPrompt = `${basePrompt}\n\nIMPORTANT CONTEXT FROM PREVIOUS CALLS:\n${previousCallsContext}\n\nUse this context to continue the conversation naturally. You may ask follow-up questions about what was discussed before.`;
+            greeting = "Welcome back! It's great to hear from you again. I've been looking forward to continuing your story from where we left off. What would you like to share today?";
+        } else {
+            greeting = "Hello! It's time for your Legacy interview. I'm here to listen and help you record another chapter of your life story. How are you feeling today?";
+            console.log("👋 First-time caller - no previous context");
         }
 
         // 1. FORCE START RECORDING
