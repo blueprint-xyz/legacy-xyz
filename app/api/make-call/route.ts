@@ -19,7 +19,8 @@ export async function POST(req: Request) {
             record_channels: "dual",
             // We pass the AI prompt as custom metadata to use later
             custom_headers: [
-                { name: "X-AI-Prompt", value: prompt }
+                { name: "X-Previous-Call", value: "Call about new dog called Wendy, she is 1 year old Shitzu dog." },
+                { name: "X-AI-Prompt", value: prompt },
             ]
         }),
     });

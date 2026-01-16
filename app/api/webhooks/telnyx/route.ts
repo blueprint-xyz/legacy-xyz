@@ -15,9 +15,21 @@ export async function POST(req: Request) {
     if (event.event_type === 'call.answered') {
         const callControlId = event.payload.call_control_id;
         const toPhone = event.payload.to;
-        const aiPrompt = event.payload.custom_headers?.find(
+
+        // Extract custom headers
+        const previousCall = event.payload.custom_headers?.find(
+            (h: Record<string, string>) => h.name === "X-Previous-Call"
+        )?.value;
+        const basePrompt = event.payload.custom_headers?.find(
             (h: Record<string, string>) => h.name === "X-AI-Prompt"
         )?.value || "You are a friendly AI assistant helping to capture life stories. Ask thoughtful questions about the user's life, memories, and experiences.";
+
+        // Build AI prompt with previous call context if available
+        let aiPrompt = basePrompt;
+        if (previousCall) {
+            aiPrompt = `${basePrompt}\n\nIMPORTANT CONTEXT FROM PREVIOUS CALL: ${previousCall}\n\nUse this context to continue the conversation naturally. You may ask follow-up questions about what was discussed before.`;
+            console.log("📚 Previous call context:", previousCall);
+        }
 
         try {
             await connect();
