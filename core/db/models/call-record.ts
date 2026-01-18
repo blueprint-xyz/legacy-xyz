@@ -14,7 +14,8 @@ export interface CallRecordDocument {
     startedAt?: Date;                // When call was answered
     endedAt?: Date;                  // When call ended
     durationSeconds?: number;        // Call duration
-    transcript: TranscriptEntry[];   // Real-time transcript entries
+    transcript: TranscriptEntry[];   // Real-time transcript entries (deprecated)
+    fullTranscript?: string;         // Full conversation transcript from recording
     summary?: string;                // AI-generated summary
     recordingUrl?: string;           // MP3 recording URL
     status: "initiated" | "in_progress" | "completed" | "failed";
@@ -71,6 +72,9 @@ const CallRecordSchema: Schema = new Schema<CallRecordDocument>(
         transcript: {
             type: [TranscriptEntrySchema],
             default: [],
+        },
+        fullTranscript: {
+            type: String,
         },
         summary: {
             type: String,

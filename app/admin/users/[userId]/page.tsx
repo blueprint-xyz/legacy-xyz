@@ -16,6 +16,7 @@ interface CallRecord {
     endedAt: string | null;
     durationSeconds: number | null;
     summary: string | null;
+    fullTranscript: string | null;
     recordingUrl: string | null;
     status: string;
     transcript: TranscriptEntry[];
@@ -294,39 +295,20 @@ export default function UserDetailPage() {
                                         {/* Transcript */}
                                         <div>
                                             <h4 className="text-sm font-medium text-zinc-300 mb-2">
-                                                Transcript {call.transcript.length > 0 && `(${call.transcript.length} messages)`}
+                                                Transcript
                                             </h4>
-                                            {call.transcript.length > 0 ? (
-                                                <div className="bg-zinc-900/50 rounded p-4 space-y-3">
-                                                    {call.transcript.map((entry, index) => (
-                                                        <div
-                                                            key={index}
-                                                            className={`flex gap-3 ${
-                                                                entry.role === "assistant"
-                                                                    ? "flex-row"
-                                                                    : "flex-row-reverse"
-                                                            }`}
-                                                        >
-                                                            <div
-                                                                className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                                                                    entry.role === "assistant"
-                                                                        ? "bg-blue-500/20 text-blue-400"
-                                                                        : "bg-green-500/20 text-green-400"
-                                                                }`}
-                                                            >
-                                                                {entry.role === "assistant" ? "AI" : "U"}
-                                                            </div>
-                                                            <div
-                                                                className={`flex-1 p-3 rounded-lg text-sm ${
-                                                                    entry.role === "assistant"
-                                                                        ? "bg-zinc-800 text-zinc-300"
-                                                                        : "bg-blue-500/10 text-zinc-300"
-                                                                }`}
-                                                            >
-                                                                {entry.text}
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                            {call.fullTranscript ? (
+                                                <div className="bg-zinc-900/50 rounded p-4">
+                                                    <p className="text-sm text-zinc-300 whitespace-pre-wrap">
+                                                        {call.fullTranscript}
+                                                    </p>
+                                                </div>
+                                            ) : call.status === "completed" ? (
+                                                <div className="text-sm text-zinc-500 italic bg-zinc-900/50 rounded p-3 flex items-center gap-2">
+                                                    <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    Transcript is being generated, please check again later...
                                                 </div>
                                             ) : (
                                                 <div className="text-sm text-zinc-500 italic bg-zinc-900/50 rounded p-3">

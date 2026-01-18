@@ -80,7 +80,7 @@ export async function POST(req: Request) {
             console.log("👋 First-time caller - no previous context");
         }
 
-        // 1. FORCE START RECORDING
+        // 1. FORCE START RECORDING (with transcription enabled)
         await fetch(`https://api.telnyx.com/v2/calls/${callControlId}/actions/record_start`, {
             method: 'POST',
             headers: {
@@ -89,24 +89,12 @@ export async function POST(req: Request) {
             },
             body: JSON.stringify({
                 format: "mp3",
-                channels: "dual"
+                channels: "dual",
+                transcription: true,  // Enable transcription for the recording
             }),
         });
-        console.log("🔴 Command Sent: Start Recording");
+        console.log("🔴 Command Sent: Start Recording (with transcription)");
 
-        // 2. START TRANSCRIPTION
-        await fetch(`https://api.telnyx.com/v2/calls/${callControlId}/actions/transcription_start`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.TELNYX_API_KEY}`,
-            },
-            body: JSON.stringify({
-                language: "en",
-                transcription_tracks: "both",
-            }),
-        });
-        console.log("📝 Command Sent: Start Transcription");
 
         // 2. Start the AI Agent
         const aiResponse = await fetch(`https://api.telnyx.com/v2/calls/${callControlId}/actions/ai_assistant_start`, {
@@ -136,66 +124,28 @@ export async function POST(req: Request) {
     }
 
     // ---------------------------------------------------------
-    // EVENT 2a: CALL TRANSCRIPTION (from transcription_start)
+    // EVENT 2: RECORDING TRANSCRIPTION SAVED (full transcript)
     // ---------------------------------------------------------
-    if (event.event_type === 'call.transcription') {
+    if (event.event_type === 'call.recording.transcription.saved') {
         const callControlId = event.payload.call_control_id;
-        const transcriptionData = event.payload.transcription_data;
+        const transcriptionText = event.payload.transcription_text;
 
-        // Only save final transcriptions (not interim)
-        if (transcriptionData?.is_final && transcriptionData?.transcript) {
-            console.log(`🗣️ TRANSCRIPTION: ${transcriptionData.transcript}`);
-
-            try {
-                await connect();
-
-                // Append transcript entry (we don't know the role from this event)
-                await CallRecord.findOneAndUpdate(
-                    { callControlId },
-                    {
-                        $push: {
-                            transcript: {
-                                role: "user", // Default to user since AI speech isn't transcribed this way
-                                text: transcriptionData.transcript,
-                                timestamp: new Date(),
-                            },
-                        },
-                    }
-                );
-            } catch (error) {
-                console.error("❌ Failed to save transcript:", error);
-            }
-        }
-    }
-
-    // ---------------------------------------------------------
-    // EVENT 2b: AI ASSISTANT TRANSCRIPTION (if available)
-    // ---------------------------------------------------------
-    if (event.event_type === 'ai_assistant.transcription') {
-        const callControlId = event.payload.call_control_id;
-        const role = event.payload.role;
-        const text = event.payload.text;
-
-        console.log(`🗣️ [${role}]: ${text}`);
+        console.log("\n📜 FULL TRANSCRIPTION RECEIVED!");
+        console.log("-------------------------------------");
+        console.log(transcriptionText?.substring(0, 500) + "...");
+        console.log("-------------------------------------\n");
 
         try {
             await connect();
 
-            // Append transcript entry to call record
+            // Save the full transcription text to a new field
             await CallRecord.findOneAndUpdate(
                 { callControlId },
-                {
-                    $push: {
-                        transcript: {
-                            role: role === "agent" ? "assistant" : "user",
-                            text,
-                            timestamp: new Date(),
-                        },
-                    },
-                }
+                { fullTranscript: transcriptionText }
             );
+            console.log("✅ Full transcript saved to database");
         } catch (error) {
-            console.error("❌ Failed to save transcript:", error);
+            console.error("❌ Failed to save full transcript:", error);
         }
     }
 
