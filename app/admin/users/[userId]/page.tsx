@@ -240,11 +240,18 @@ export default function UserDetailPage() {
                                     </div>
 
                                     {/* Summary Preview */}
-                                    {call.summary && (
+                                    {call.summary ? (
                                         <p className="mt-2 text-sm text-zinc-400 line-clamp-2">
                                             {call.summary}
                                         </p>
-                                    )}
+                                    ) : call.status === "completed" ? (
+                                        <p className="mt-2 text-sm text-zinc-500 italic flex items-center gap-2">
+                                            <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Summary is being generated, please check again later...
+                                        </p>
+                                    ) : null}
                                 </div>
 
                                 {/* Audio Player */}
@@ -266,24 +273,31 @@ export default function UserDetailPage() {
                                 {expandedCall === call._id && (
                                     <div className="border-t border-zinc-700 p-4 space-y-4">
                                         {/* Full Summary */}
-                                        {call.summary && (
-                                            <div>
-                                                <h4 className="text-sm font-medium text-zinc-300 mb-2">
-                                                    Summary
-                                                </h4>
+                                        <div>
+                                            <h4 className="text-sm font-medium text-zinc-300 mb-2">
+                                                Summary
+                                            </h4>
+                                            {call.summary ? (
                                                 <p className="text-sm text-zinc-400 bg-zinc-900/50 rounded p-3">
                                                     {call.summary}
                                                 </p>
-                                            </div>
-                                        )}
+                                            ) : (
+                                                <div className="text-sm text-zinc-500 italic bg-zinc-900/50 rounded p-3 flex items-center gap-2">
+                                                    <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    Summary is being generated, please check again later...
+                                                </div>
+                                            )}
+                                        </div>
 
                                         {/* Transcript */}
-                                        {call.transcript.length > 0 && (
-                                            <div>
-                                                <h4 className="text-sm font-medium text-zinc-300 mb-2">
-                                                    Transcript ({call.transcript.length} messages)
-                                                </h4>
-                                                <div className="bg-zinc-900/50 rounded p-3 max-h-96 overflow-y-auto space-y-3">
+                                        <div>
+                                            <h4 className="text-sm font-medium text-zinc-300 mb-2">
+                                                Transcript {call.transcript.length > 0 && `(${call.transcript.length} messages)`}
+                                            </h4>
+                                            {call.transcript.length > 0 ? (
+                                                <div className="bg-zinc-900/50 rounded p-4 space-y-3">
                                                     {call.transcript.map((entry, index) => (
                                                         <div
                                                             key={index}
@@ -314,8 +328,12 @@ export default function UserDetailPage() {
                                                         </div>
                                                     ))}
                                                 </div>
-                                            </div>
-                                        )}
+                                            ) : (
+                                                <div className="text-sm text-zinc-500 italic bg-zinc-900/50 rounded p-3">
+                                                    No transcript available for this call.
+                                                </div>
+                                            )}
+                                        </div>
 
                                         {/* Recording Download */}
                                         {call.recordingUrl && (

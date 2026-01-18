@@ -94,6 +94,20 @@ export async function POST(req: Request) {
         });
         console.log("🔴 Command Sent: Start Recording");
 
+        // 2. START TRANSCRIPTION
+        await fetch(`https://api.telnyx.com/v2/calls/${callControlId}/actions/transcription_start`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.TELNYX_API_KEY}`,
+            },
+            body: JSON.stringify({
+                language: "en",
+                transcription_tracks: "both",
+            }),
+        });
+        console.log("📝 Command Sent: Start Transcription");
+
         // 2. Start the AI Agent
         const aiResponse = await fetch(`https://api.telnyx.com/v2/calls/${callControlId}/actions/ai_assistant_start`, {
             method: 'POST',
@@ -122,7 +136,40 @@ export async function POST(req: Request) {
     }
 
     // ---------------------------------------------------------
-    // EVENT 2: REAL-TIME TRANSCRIPTION -> SAVE TO DB
+    // EVENT 2a: CALL TRANSCRIPTION (from transcription_start)
+    // ---------------------------------------------------------
+    if (event.event_type === 'call.transcription') {
+        const callControlId = event.payload.call_control_id;
+        const transcriptionData = event.payload.transcription_data;
+
+        // Only save final transcriptions (not interim)
+        if (transcriptionData?.is_final && transcriptionData?.transcript) {
+            console.log(`🗣️ TRANSCRIPTION: ${transcriptionData.transcript}`);
+
+            try {
+                await connect();
+
+                // Append transcript entry (we don't know the role from this event)
+                await CallRecord.findOneAndUpdate(
+                    { callControlId },
+                    {
+                        $push: {
+                            transcript: {
+                                role: "user", // Default to user since AI speech isn't transcribed this way
+                                text: transcriptionData.transcript,
+                                timestamp: new Date(),
+                            },
+                        },
+                    }
+                );
+            } catch (error) {
+                console.error("❌ Failed to save transcript:", error);
+            }
+        }
+    }
+
+    // ---------------------------------------------------------
+    // EVENT 2b: AI ASSISTANT TRANSCRIPTION (if available)
     // ---------------------------------------------------------
     if (event.event_type === 'ai_assistant.transcription') {
         const callControlId = event.payload.call_control_id;
