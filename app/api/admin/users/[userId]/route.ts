@@ -30,9 +30,9 @@ export async function GET(
                 endedAt: 1,
                 durationSeconds: 1,
                 summary: 1,
+                fullTranscript: 1,
                 recordingUrl: 1,
                 status: 1,
-                transcript: 1,
             });
 
         return NextResponse.json({
