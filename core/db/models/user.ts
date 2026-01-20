@@ -13,9 +13,9 @@ export interface UserDocument {
 
 const UserSchema: Schema = new Schema<UserDocument>(
     {
-        email: { type: String, required: true },
+        email: { type: String, required: true, unique: true },
         password: { type: String },
-        phone: { type: String, sparse: true },
+        phone: { type: String },
         fullName: { type: String },
         onboardingCompleted: { type: Boolean, default: false },
     },
