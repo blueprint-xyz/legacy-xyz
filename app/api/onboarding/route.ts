@@ -23,18 +23,6 @@ export async function POST(request: NextRequest) {
 
         await connect();
 
-        // Check if user already exists
-        const existingUser = await User.findOne({
-            $or: [{ email }, { phone }],
-        });
-
-        if (existingUser) {
-            return NextResponse.json(
-                { error: "A user with this email or phone already exists" },
-                { status: 409 }
-            );
-        }
-
         // Create user (no password required for onboarding)
         const user = await User.create({
             email,
@@ -42,8 +30,6 @@ export async function POST(request: NextRequest) {
             fullName,
             onboardingCompleted: true,
         });
-
-        console.log("🚀 User created:", user._id);
 
         return NextResponse.json({
             success: true,
