@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { HydratedDocument } from "mongoose";
 import { verifyToken } from "@/core/auth/jwt";
 import connect from "@/core/db/connect-mongo";
 import { User, UserDocument } from "@/core/db/models/user";
@@ -9,7 +10,7 @@ import { User, UserDocument } from "@/core/db/models/user";
  */
 export async function getAuthenticatedUser(
     request: NextRequest
-): Promise<UserDocument | null> {
+): Promise<HydratedDocument<UserDocument> | null> {
     const token = request.cookies.get("token")?.value;
     if (!token) return null;
 

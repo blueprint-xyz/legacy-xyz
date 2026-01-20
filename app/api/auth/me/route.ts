@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
                 fullName: user.fullName,
                 phone: user.phone,
                 onboardingCompleted: user.onboardingCompleted,
+                isAdmin: user.isAdmin || false,
             },
         });
     } catch (error) {

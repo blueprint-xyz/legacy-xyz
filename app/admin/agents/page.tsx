@@ -76,7 +76,7 @@ export default function AgentsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-900">
+        <div className="min-h-screen bg-zinc-900 pt-14">
             {/* Header */}
             <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur">
                 <div className="max-w-7xl mx-auto px-6 py-4">

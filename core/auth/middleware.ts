@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "./jwt";
+import { verifyToken, JWTPayload } from "./jwt";
 
 // Public paths that don't require authentication on admin subdomain
 const PUBLIC_ADMIN_PATHS = ["/login"];
@@ -15,7 +15,7 @@ export function isPublicPath(pathname: string): boolean {
  * Verify the auth token from request cookies
  * Returns the payload if valid, null otherwise
  */
-export async function verifyRequestAuth(req: NextRequest) {
+export async function verifyRequestAuth(req: NextRequest): Promise<JWTPayload | null> {
     const token = req.cookies.get("token")?.value;
 
     if (!token) {

@@ -7,6 +7,7 @@ export interface UserDocument {
     phone?: string;
     fullName?: string;
     onboardingCompleted: boolean;
+    isAdmin: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -18,6 +19,7 @@ const UserSchema: Schema = new Schema<UserDocument>(
         phone: { type: String },
         fullName: { type: String },
         onboardingCompleted: { type: Boolean, default: false },
+        isAdmin: { type: Boolean, default: false },
     },
     {
         collection: "users",

@@ -63,6 +63,11 @@ export async function proxy(req: NextRequest) {
       if (!payload) {
         return redirectToLogin(req, true);
       }
+
+      // Check if user is admin
+      if (!payload.isAdmin) {
+        return redirectToLogin(req, true);
+      }
     }
 
     return NextResponse.rewrite(new URL(adminPath, req.url));

@@ -29,6 +29,17 @@ export default function AdminLoginPage() {
                 return;
             }
 
+            // Check if user has admin access
+            const meRes = await fetch("/api/auth/me");
+            const meData = await meRes.json();
+
+            if (!meData.user?.isAdmin) {
+                // Log out the non-admin user
+                await fetch("/api/auth/logout", { method: "POST" });
+                setError("Access denied. Admin privileges required.");
+                return;
+            }
+
             router.push("/");
         } catch {
             setError("Something went wrong");
