@@ -11,7 +11,7 @@ export async function POST(req: Request) {
         },
         body: JSON.stringify({
             to: phone,
-            from: "+972524835373",
+            from: "+97223766068",
             connection_id: "2864772420361783121",
             webhook_url: `https://www.legacy-xyz.com/api/webhooks/telnyx`,
             record_channels: "dual",
