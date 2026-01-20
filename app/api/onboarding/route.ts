@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { flattenError } from "zod";
 import connect from "@/core/db/connect-mongo";
 import { User } from "@/core/db/models/user";
 import { personalInfoSchema } from "@/core/validations/onboarding";
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 {
                     error: "Validation failed",
-                    details: validationResult.error.flatten().fieldErrors,
+                    details: flattenError(validationResult.error).fieldErrors,
                 },
                 { status: 400 }
             );
@@ -23,13 +24,18 @@ export async function POST(request: NextRequest) {
 
         await connect();
 
-        // Create user (no password required for onboarding)
-        const user = await User.create({
-            email,
-            phone,
-            fullName,
-            onboardingCompleted: true,
-        });
+        // Create or update user (allow duplicates for now)
+        const user = await User.findOneAndUpdate(
+            { email },
+            {
+                $set: {
+                    phone,
+                    fullName,
+                    onboardingCompleted: true,
+                },
+            },
+            { upsert: true, new: true }
+        );
 
         return NextResponse.json({
             success: true,
