@@ -1,9 +1,14 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import AuthModal from "@/components/auth/auth-modal";
+
+interface User {
+  id: string;
+  email: string;
+  fullName?: string;
+}
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -14,8 +19,32 @@ const navLinks = [
 export default function SiteHeader() {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+
+  // Check auth status on mount
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.authenticated) {
+            setUser(data.user);
+          }
+        }
+      } catch {
+        // Not authenticated
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    checkAuth();
+  }, []);
 
   // Close drawer on route change
   useEffect(() => {
@@ -33,6 +62,29 @@ export default function SiteHeader() {
       document.body.style.overflow = "";
     };
   }, [drawerOpen]);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/";
+    } catch {
+      // Handle error silently
+    }
+  };
 
   return (
     <>
@@ -78,10 +130,67 @@ export default function SiteHeader() {
           </nav>
 
           <div className="flex items-center gap-3">
-            {/* Auth on desktop only */}
+            {/* Auth section - desktop */}
             <div className="hidden md:block">
-              <AuthModal />
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-border border-t-foreground rounded-full animate-spin" />
+              ) : user ? (
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-accent-foreground text-sm font-medium">
+                      {user.fullName?.charAt(0).toUpperCase() ||
+                        user.email.charAt(0).toUpperCase()}
+                    </div>
+                    <span>{user.fullName || user.email}</span>
+                  </button>
+                  {userMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-xl shadow-lg z-50">
+                      <div className="px-4 py-3 border-b border-border">
+                        <p className="text-sm font-medium text-card-foreground">
+                          {user.fullName || "User"}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                      <div className="p-2">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-muted rounded-lg transition-colors"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                            />
+                          </svg>
+                          Sign Out
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  href="/signin"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-muted hover:bg-border rounded-lg transition-colors"
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
+
+            {/* Hamburger - mobile */}
             <button
               type="button"
               className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg text-foreground hover:bg-muted transition-colors"
@@ -176,7 +285,55 @@ export default function SiteHeader() {
 
           {/* Auth in mobile drawer */}
           <div className="mt-auto border-t border-border px-4 py-4">
-            <AuthModal />
+            {isLoading ? (
+              <div className="flex justify-center py-2">
+                <div className="w-5 h-5 border-2 border-border border-t-foreground rounded-full animate-spin" />
+              </div>
+            ) : user ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3 px-4">
+                  <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-accent-foreground text-sm font-medium">
+                    {user.fullName?.charAt(0).toUpperCase() ||
+                      user.email.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {user.fullName || "User"}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-muted rounded-lg transition-colors"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/signin"
+                onClick={closeDrawer}
+                className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-background bg-foreground rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </nav>
       </div>
