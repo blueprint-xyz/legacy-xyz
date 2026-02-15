@@ -202,7 +202,7 @@ export default function SiteHeader() {
                 </div>
               ) : (
                 <Link
-                  href="/signin"
+                  href="/auth/sign-in"
                   className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-muted hover:bg-border rounded-lg transition-colors"
                 >
                   Sign In
@@ -367,7 +367,7 @@ export default function SiteHeader() {
               </div>
             ) : (
               <Link
-                href="/signin"
+                href="/auth/sign-in"
                 onClick={closeDrawer}
                 className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-background bg-foreground rounded-lg hover:opacity-90 transition-opacity"
               >
