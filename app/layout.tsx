@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import AuthModal from "@/components/auth/auth-modal";
 import SiteHeader from "@/components/layout/site-header";
 import SiteFooter from "@/components/layout/site-footer";
 
@@ -32,9 +31,6 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <SiteHeader />
-        <div className="fixed top-0 right-0 p-4 z-50">
-          <AuthModal />
-        </div>
         {children}
         <SiteFooter />
       </body>

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import AuthModal from "@/components/auth/auth-modal";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -77,7 +78,10 @@ export default function SiteHeader() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <div id="auth-portal" />
+            {/* Auth on desktop only */}
+            <div className="hidden md:block">
+              <AuthModal />
+            </div>
             <button
               type="button"
               className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg text-foreground hover:bg-muted transition-colors"
@@ -168,6 +172,11 @@ export default function SiteHeader() {
                 {link.label}
               </Link>
             ))}
+          </div>
+
+          {/* Auth in mobile drawer */}
+          <div className="mt-auto border-t border-border px-4 py-4">
+            <AuthModal />
           </div>
         </nav>
       </div>
