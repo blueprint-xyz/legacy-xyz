@@ -115,9 +115,7 @@ export default function Dashboard() {
                 <p className="text-zinc-600 dark:text-zinc-400 mb-6">
                     Please sign in or create an account to get started with preserving your life stories.
                 </p>
-                <p className="text-sm text-zinc-500">
-                    Use the Sign In button in the top right corner to continue.
-                </p>
+
             </div>
         );
     }
