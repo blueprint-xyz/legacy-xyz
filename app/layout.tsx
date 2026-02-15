@@ -36,7 +36,7 @@ export default function RootLayout({
           <AuthModal />
         </div>
         {children}
-        {/* <SiteFooter /> */}
+        <SiteFooter />
       </body>
     </html>
   );
