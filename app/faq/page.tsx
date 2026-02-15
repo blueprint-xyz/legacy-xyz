@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import SiteFooter from "@/components/layout/site-footer";
 import FaqAccordion from "@/components/faq/faq-accordion";
 
 export const metadata: Metadata = {
@@ -182,8 +181,6 @@ export default function FaqPage() {
           </div>
         </div>
       </section>
-
-      <SiteFooter />
     </main>
   );
 }

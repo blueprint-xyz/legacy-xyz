@@ -2,7 +2,6 @@ import HeroSection from "@/components/home/hero-section";
 import FeaturesSection from "@/components/home/features-section";
 import TestimonialSection from "@/components/home/testimonial-section";
 import CtaSection from "@/components/home/cta-section";
-import SiteFooter from "@/components/layout/site-footer";
 
 export default function Home() {
   return (
@@ -17,7 +16,6 @@ export default function Home() {
         <hr className="border-border" />
       </div>
       <CtaSection />
-      <SiteFooter />
     </main>
   );
 }

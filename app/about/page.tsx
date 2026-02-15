@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import SiteFooter from "@/components/layout/site-footer";
 
 export const metadata: Metadata = {
   title: "How It Works - Legacy",
@@ -230,8 +229,6 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
-
-      <SiteFooter />
     </main>
   );
 }
