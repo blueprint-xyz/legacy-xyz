@@ -3,6 +3,7 @@ import connect from '@/core/db/connect-mongo';
 import { User } from '@/core/db/models/user';
 import { CallRecord } from '@/core/db/models/call-record';
 import { Agent } from '@/core/db/models/agent';
+import { getUnansweredQuestions, formatQuestionsForPrompt } from '@/core/questions/select-questions';
 
 export async function POST(req: Request) {
     const body = await req.json();
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
         const toPhone = event.payload.to;
 
         let previousCallsContext = "";
+        let questionsContext = "";
         let agent = null;
 
         try {
@@ -58,6 +60,12 @@ export async function POST(req: Request) {
                     console.log(`📚 Found ${previousCalls.length} previous calls for context`);
                 }
 
+                // Fetch unanswered questions for this user
+                const { questions: nextQuestions, allExhausted } = await getUnansweredQuestions(user._id);
+                const questionIds = nextQuestions.map(q => q._id);
+                questionsContext = formatQuestionsForPrompt(nextQuestions, allExhausted);
+                console.log(`📋 Injecting ${nextQuestions.length} questions (exhausted: ${allExhausted})`);
+
                 // Create call record for this new call
                 await CallRecord.create({
                     userId: user._id,
@@ -65,6 +73,7 @@ export async function POST(req: Request) {
                     phone: toPhone,
                     startedAt: new Date(),
                     status: "in_progress",
+                    questionsAsked: questionIds,
                 });
                 console.log("📝 Call record created for user:", user._id);
             } else {
@@ -85,6 +94,11 @@ export async function POST(req: Request) {
         } else {
             greeting = agent.firstTimeGreeting;
             console.log("👋 First-time caller - no previous context");
+        }
+
+        // Append session questions to the AI prompt
+        if (questionsContext) {
+            aiPrompt += questionsContext;
         }
 
         // 1. FORCE START RECORDING (with transcription enabled)
