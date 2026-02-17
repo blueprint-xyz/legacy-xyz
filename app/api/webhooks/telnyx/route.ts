@@ -4,6 +4,7 @@ import { User } from '@/core/db/models/user';
 import { CallRecord } from '@/core/db/models/call-record';
 import { Agent } from '@/core/db/models/agent';
 import { getUnansweredQuestions, formatQuestionsForPrompt } from '@/core/questions/select-questions';
+import { analyzeAnsweredQuestions } from '@/core/questions/analyze-answers';
 
 export async function POST(req: Request) {
     const body = await req.json();
@@ -164,6 +165,15 @@ export async function POST(req: Request) {
                 { fullTranscript: transcriptionText }
             );
             console.log("✅ Full transcript saved to database");
+
+            // Analyze which questions were actually answered using AI
+            if (transcriptionText) {
+                try {
+                    await analyzeAnsweredQuestions(callControlId, transcriptionText);
+                } catch (analysisError) {
+                    console.error("❌ Failed to analyze answered questions:", analysisError);
+                }
+            }
         } catch (error) {
             console.error("❌ Failed to save full transcript:", error);
         }

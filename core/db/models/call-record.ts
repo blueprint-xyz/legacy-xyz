@@ -18,7 +18,8 @@ export interface CallRecordDocument {
     fullTranscript?: string;         // Full conversation transcript from recording
     summary?: string;                // AI-generated summary
     recordingUrl?: string;           // MP3 recording URL
-    questionsAsked: Types.ObjectId[];  // Question IDs sent in this call's prompt
+    questionsAsked: Types.ObjectId[];    // Question IDs sent in this call's prompt
+    questionsAnswered: Types.ObjectId[]; // Question IDs actually answered (determined by AI analysis)
     status: "initiated" | "in_progress" | "completed" | "failed";
     createdAt: Date;
     updatedAt: Date;
@@ -84,6 +85,11 @@ const CallRecordSchema: Schema = new Schema<CallRecordDocument>(
             type: String,
         },
         questionsAsked: {
+            type: [Schema.Types.ObjectId],
+            ref: "Question",
+            default: [],
+        },
+        questionsAnswered: {
             type: [Schema.Types.ObjectId],
             ref: "Question",
             default: [],

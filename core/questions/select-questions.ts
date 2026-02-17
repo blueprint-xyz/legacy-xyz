@@ -8,19 +8,31 @@ export async function getUnansweredQuestions(
     userId: Types.ObjectId,
     limit: number = QUESTIONS_PER_CALL
 ): Promise<{ questions: QuestionDocument[]; allExhausted: boolean }> {
-    // Aggregate all question IDs already sent across all calls for this user
-    const askedResult = await CallRecord.aggregate([
+    // Aggregate all question IDs confirmed answered across all calls for this user
+    const answeredResult = await CallRecord.aggregate([
         { $match: { userId } },
+        { $unwind: "$questionsAnswered" },
+        { $group: { _id: null, answeredIds: { $addToSet: "$questionsAnswered" } } },
+    ]);
+
+    const answeredIds: Types.ObjectId[] =
+        answeredResult.length > 0 ? answeredResult[0].answeredIds : [];
+
+    // Also exclude questions currently being asked in an in-progress call
+    const inProgressResult = await CallRecord.aggregate([
+        { $match: { userId, status: "in_progress" } },
         { $unwind: "$questionsAsked" },
         { $group: { _id: null, askedIds: { $addToSet: "$questionsAsked" } } },
     ]);
 
-    const askedIds: Types.ObjectId[] =
-        askedResult.length > 0 ? askedResult[0].askedIds : [];
+    const inProgressIds: Types.ObjectId[] =
+        inProgressResult.length > 0 ? inProgressResult[0].askedIds : [];
 
-    // Fetch active questions NOT in the asked set, ordered by phase then order
+    const excludeIds = [...answeredIds, ...inProgressIds];
+
+    // Fetch active questions not yet answered or in-progress, ordered by phase then order
     const questions = await Question.find({
-        _id: { $nin: askedIds },
+        _id: { $nin: excludeIds },
         isActive: true,
     })
         .sort({ phase: 1, order: 1 })
