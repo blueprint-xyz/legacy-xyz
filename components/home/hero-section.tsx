@@ -7,12 +7,7 @@ export default function HeroSection() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-6">
           AI-Powered Life Story Preservation
         </p>
-        <h1 className="text-4xl sm:text-5xl md:text-7xl font-semibold tracking-tight text-foreground leading-[1.1] text-balance font-sans">
-          Every life tells
-          <br />
-          a story worth keeping
-        </h1>
-        <p className="mt-8 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed text-pretty">
+        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed text-pretty">
           Legacy calls you on the phone, asks thoughtful questions about your
           life, and preserves your answers forever. No apps to learn. No
           screens to stare at. Just a conversation.
