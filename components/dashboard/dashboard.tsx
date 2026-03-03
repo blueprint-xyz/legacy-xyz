@@ -8,8 +8,48 @@ interface User {
     id: string;
     email: string;
     fullName?: string;
+    preferredName?: string;
+    agentName?: string;
+    dateOfBirth?: string;
+    birthplace?: string;
+    lifeChapters?: number[];
+    conversationalVibe?: string;
     phone?: string;
     onboardingCompleted: boolean;
+}
+
+const CHAPTER_NAMES: Record<number, string> = {
+    1: "Childhood & Home",
+    2: "School & Identity",
+    3: "Early Adulthood",
+    4: "Partnership & Marriage",
+    5: "Parenting & Kids",
+    6: "Career & Passion",
+    7: "Resilience & Hardship",
+    8: "Values & Beliefs",
+};
+
+function buildCallPrompt(user: User): string {
+    const name = user.preferredName || user.fullName?.split(" ")[0] || "there";
+    const chapters = user.lifeChapters?.map((c) => CHAPTER_NAMES[c]).join(", ") || "";
+    const vibe = user.conversationalVibe || "casual";
+
+    const vibeInstructions: Record<string, string> = {
+        reflective: "Take a deeper, more philosophical pace. Allow for pauses and contemplation. Ask 'why' and 'how did that shape you' questions.",
+        casual: "Keep it conversational, like a friendly chat over coffee. Be warm and use natural language.",
+        direct: "Focus on facts, events, and the timeline. Be clear and structured in your questions.",
+    };
+
+    return [
+        `You are ${user.agentName || "Legacy"}, a personal biographer.`,
+        `You are speaking with ${user.fullName} (call them "${name}").`,
+        user.birthplace ? `They were born in ${user.birthplace}${user.dateOfBirth ? ` on ${user.dateOfBirth}` : ""}.` : "",
+        chapters ? `Prioritized life chapters to explore: ${chapters}.` : "",
+        `Conversational style: ${vibeInstructions[vibe] || vibeInstructions.casual}`,
+        `Your goal is to help ${name} capture their life story as a lasting legacy for their family.`,
+        `Start by warmly greeting them by name, then guide the conversation through their prioritized chapters.`,
+        `Be an excellent listener. Ask follow-up questions. Keep the conversation flowing naturally.`,
+    ].filter(Boolean).join(" ");
 }
 
 type View = "loading" | "unauthenticated" | "welcome";
@@ -58,7 +98,7 @@ export default function Dashboard() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     phone: user.phone,
-                    prompt: `You are a friendly AI assistant helping ${user.fullName} capture their life story. Start by warmly greeting them by name, then ask thoughtful questions about their childhood memories, family traditions, or significant life moments. Be conversational and encouraging. Keep the conversation flowing naturally.`,
+                    prompt: buildCallPrompt(user),
                 }),
             });
 
@@ -113,7 +153,7 @@ export default function Dashboard() {
     }
 
     // Welcome view
-    const firstName = user?.fullName?.split(" ")[0] || "there";
+    const firstName = user?.preferredName || user?.fullName?.split(" ")[0] || "there";
 
     return (
         <div className="w-full max-w-md mx-auto">
