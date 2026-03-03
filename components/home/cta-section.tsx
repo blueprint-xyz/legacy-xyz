@@ -17,7 +17,7 @@ export default function CtaSection() {
         </p>
         <div className="mt-10">
           <Link
-            href="#"
+            href="/auth/sign-in"
             className="inline-flex items-center justify-center px-10 py-4 bg-foreground text-background text-sm font-medium rounded-full transition-opacity hover:opacity-90"
           >
             Create Your Free Account
