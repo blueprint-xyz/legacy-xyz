@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import OnboardingForm from "@/components/onboarding/onboarding-form";
 
 interface User {
     id: string;
@@ -12,13 +12,14 @@ interface User {
     onboardingCompleted: boolean;
 }
 
-type View = "loading" | "unauthenticated" | "onboarding" | "welcome" | "edit-profile";
+type View = "loading" | "unauthenticated" | "welcome";
 
 export default function Dashboard() {
     const [view, setView] = useState<View>("loading");
     const [user, setUser] = useState<User | null>(null);
     const [callStatus, setCallStatus] = useState<string | null>(null);
     const [isCallingInProgress, setIsCallingInProgress] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
         async function checkAuth() {
@@ -28,7 +29,12 @@ export default function Dashboard() {
                     const data = await response.json();
                     if (data.authenticated) {
                         setUser(data.user);
-                        setView(data.user.onboardingCompleted ? "welcome" : "onboarding");
+                        if (data.user.onboardingCompleted) {
+                            setView("welcome");
+                        } else {
+                            router.push("/onboarding");
+                            return;
+                        }
                         return;
                     }
                 }
@@ -39,20 +45,6 @@ export default function Dashboard() {
         }
         checkAuth();
     }, []);
-
-    const handleOnboardingSuccess = (data: { fullName: string; phone: string }) => {
-        setUser((prev) =>
-            prev ? { ...prev, fullName: data.fullName, phone: data.phone, onboardingCompleted: true } : null
-        );
-        setView("welcome");
-    };
-
-    const handleEditSuccess = (data: { fullName: string; phone: string }) => {
-        setUser((prev) =>
-            prev ? { ...prev, fullName: data.fullName, phone: data.phone } : null
-        );
-        setView("welcome");
-    };
 
     const handleMakeTestCall = async () => {
         if (!user?.phone) return;
@@ -117,32 +109,6 @@ export default function Dashboard() {
                 </p>
 
             </div>
-        );
-    }
-
-    if (view === "onboarding") {
-        return (
-            <OnboardingForm
-                initialData={{
-                    fullName: user?.fullName,
-                    phone: user?.phone,
-                }}
-                onSuccess={handleOnboardingSuccess}
-            />
-        );
-    }
-
-    if (view === "edit-profile") {
-        return (
-            <OnboardingForm
-                initialData={{
-                    fullName: user?.fullName,
-                    phone: user?.phone,
-                }}
-                isEditMode
-                onSuccess={handleEditSuccess}
-                onCancel={() => setView("welcome")}
-            />
         );
     }
 
@@ -268,28 +234,6 @@ export default function Dashboard() {
                         Soon
                     </span>
                 </div>
-
-                <button
-                    onClick={() => setView("edit-profile")}
-                    className="flex flex-col items-center gap-2 transition-opacity hover:opacity-70"
-                >
-                    <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                        <svg
-                            className="w-5 h-5 text-zinc-600 dark:text-zinc-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
-                        </svg>
-                    </div>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">Profile</span>
-                </button>
             </div>
 
             {/* Footer Info */}
