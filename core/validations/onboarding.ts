@@ -29,7 +29,7 @@ export const lifeRoadmapSchema = z.object({
 
 export const conversationalVibeSchema = z.object({
     conversationalVibe: z.enum(["reflective", "casual", "direct"], {
-        required_error: "Please choose a conversational style",
+        message: "Please choose a conversational style",
     }),
 });
 

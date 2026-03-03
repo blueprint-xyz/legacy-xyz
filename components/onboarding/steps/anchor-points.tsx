@@ -21,7 +21,7 @@ export default function AnchorPoints({ data, onUpdate, onNext, onBack }: Props) 
         });
         if (!result.success) {
             const fieldErrors: Record<string, string> = {};
-            result.error.errors.forEach((e) => {
+            result.error.issues.forEach((e) => {
                 if (e.path[0]) fieldErrors[e.path[0] as string] = e.message;
             });
             setErrors(fieldErrors);

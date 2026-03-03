@@ -21,7 +21,7 @@ export default function Introduction({ data, onUpdate, onNext }: Props) {
             isGift: data.isGift,
         });
         if (!result.success) {
-            setValidationError(result.error.errors[0].message);
+            setValidationError(result.error.issues[0].message);
             return;
         }
         setValidationError(null);

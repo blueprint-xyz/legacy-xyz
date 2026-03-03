@@ -37,7 +37,7 @@ export default function ConversationalVibe({ data, onUpdate, onNext, onBack }: P
             conversationalVibe: data.conversationalVibe,
         });
         if (!result.success) {
-            setValidationError(result.error.errors[0].message);
+            setValidationError(result.error.issues[0].message);
             return;
         }
         setValidationError(null);

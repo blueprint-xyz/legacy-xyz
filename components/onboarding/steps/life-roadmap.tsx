@@ -37,7 +37,7 @@ export default function LifeRoadmap({ data, onUpdate, onNext, onBack }: Props) {
     const handleNext = () => {
         const result = lifeRoadmapSchema.safeParse({ lifeChapters: data.lifeChapters });
         if (!result.success) {
-            setValidationError(result.error.errors[0].message);
+            setValidationError(result.error.issues[0].message);
             return;
         }
         setValidationError(null);
