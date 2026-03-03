@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { flattenError } from "zod";
-import { personalInfoSchema } from "@/core/validations/onboarding";
+import { personalInfoSchema, onboardingSchema } from "@/core/validations/onboarding";
 import { getAuthenticatedUser } from "@/core/services/user";
 
 export async function POST(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
 
         // Validate input
-        const validationResult = personalInfoSchema.safeParse(body);
+        const validationResult = onboardingSchema.safeParse(body);
         if (!validationResult.success) {
             return NextResponse.json(
                 {
@@ -27,11 +27,21 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const { fullName, phone } = validationResult.data;
+        const data = validationResult.data;
 
         // Update user with onboarding data
-        user.fullName = fullName;
-        user.phone = phone;
+        user.fullName = data.fullName;
+        user.preferredName = data.preferredName || data.fullName.split(" ")[0];
+        user.phone = data.phone;
+        user.agentName = data.agentName;
+        user.dateOfBirth = new Date(data.dateOfBirth);
+        user.birthplace = data.birthplace;
+        user.lifeChapters = data.lifeChapters;
+        user.conversationalVibe = data.conversationalVibe;
+        user.preferredTimezone = data.preferredTimezone;
+        user.preferredDay = data.preferredDay;
+        user.preferredTime = data.preferredTime;
+        user.isGift = data.isGift;
         user.onboardingCompleted = true;
         await user.save();
 
